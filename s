@@ -501,6 +501,7 @@ local function keyEdge(vk)
 end
 
 local State = {
+    GlobalSearch = "",
     Win = { x = 100, y = 100, w = 580, h = 460 },
     Drag = false, DragOff = Vector2.new(0, 0),
     ActiveTab = 1,
@@ -1303,8 +1304,31 @@ local function renderWindow(dt)
     local tab = Tabs[State.ActiveTab]
     if tab then
         local topPad, gap = 14, 8
+        local groupsToRender = tab.groups
+        
+        if State.GlobalSearch ~= "" then
+            groupsToRender = {}
+            local q = State.GlobalSearch:lower()
+            local searchGroup = { title = "Search Results", elements = {} }
+            for _, t in ipairs(Tabs) do
+                for _, g in ipairs(t.groups) do
+                    for _, el in ipairs(g.elements) do
+                        local tStr = (el.title or ""):lower()
+                        local dStr = (el.desc or ""):lower()
+                        if tStr:find(q, 1, true) or dStr:find(q, 1, true) then
+                            table.insert(searchGroup.elements, el)
+                        end
+                    end
+                end
+            end
+            if #searchGroup.elements == 0 then
+                searchGroup.title = "No results found."
+            end
+            table.insert(groupsToRender, searchGroup)
+        end
+
         local totalH = topPad * 2
-        for _, g in ipairs(tab.groups) do
+        for _, g in ipairs(groupsToRender) do
             if g.title then totalH = totalH + 30 + gap end
             for _, el in ipairs(g.elements) do totalH = totalH + cardHeight(el) + gap end
         end
@@ -1336,7 +1360,7 @@ local function renderWindow(dt)
         local cy = cvy + topPad - tab.scroll
         local mouseInView = Input.mx > win.x + RAIL_W and Input.my > cvy and Input.my < viewBottom
         local idx = 0
-        for _, g in ipairs(tab.groups) do
+        for _, g in ipairs(groupsToRender) do
             if g.title then
                 idx = idx + 1
                 local hh = 30
@@ -1379,6 +1403,27 @@ local function renderWindow(dt)
     rect("win.maxbg", mxX, mxY, mxW, mbH, Theme.Control, mxHover and 0.6 or 0, 60, 5)
     outline("win.max", mxX + 9, mxY + 6, mxW - 18, mbH - 12, Theme.Text, 0.9, 61, 2)
     if mxHover and Input.clicked then UI:Maximize() end
+
+    local gsbW = 140
+    local gsbH = 22
+    local gsbX = mxX - 6 - gsbW
+    local gsbY = win.y + 11
+    local gsbHover = not block and inBounds(gsbX, gsbY, gsbW, gsbH)
+    if gsbHover and Input.clicked then
+        State.Focused = {
+            owner = "global", id = "search", buf = State.GlobalSearch, numeric = false, live = true,
+            onType = function(buf) State.GlobalSearch = buf end,
+            onCommit = function(buf) State.GlobalSearch = buf; tab.scroll = 0 end
+        }
+    end
+    local isGSearch = State.Focused and State.Focused.owner == "global"
+    rect("win.gsbbg", gsbX, gsbY, gsbW, gsbH, Theme.Control, (isGSearch or gsbHover) and 0.8 or 0.4, 60, 4)
+    outline("win.gsbout", gsbX, gsbY, gsbW, gsbH, isGSearch and Theme.Accent or Theme.ElementBorder, 0.8, 61, 4)
+    local gText = State.GlobalSearch
+    local gCaret = (isGSearch and math.floor(tick() * 2) % 2 == 0) and "|" or ""
+    local gShow = (gText ~= "" and (gText .. gCaret)) or (gCaret ~= "" and gCaret) or "Search options..."
+    text("win.gsbtxt", gShow, gsbX + 8, gsbY + 4, 13, (gText ~= "" or gCaret ~= "") and Theme.Text or Theme.SubText, 61)
+
     line("win.tline", win.x, win.y + TITLE_H, win.x + win.w, win.y + TITLE_H, Theme.TitleBarLine, 0.5, 59)
     line("win.rline", win.x + RAIL_W, win.y + TITLE_H, win.x + RAIL_W, win.y + win.h, Theme.RailLine, OP.Rail, 59)
     local tabY0 = win.y + TITLE_H + 10
@@ -1881,4 +1926,3 @@ function UI:CreateWindow(cfg)
 end
 
 return Bwin
---a
