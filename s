@@ -2,8 +2,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-WabiSabi = {}
-local UI = WabiSabi
+Bwin = {}
+local UI = Bwin
 
 local Theme = {
     Accent = Color3.fromRGB(96, 205, 255),
@@ -344,9 +344,9 @@ local Palettes = {
     },
 }
 for k, v in pairs(Theme) do Palettes.Dark[k] = v end
-WabiSabi.Themes = {}
-for k in pairs(Palettes) do WabiSabi.Themes[#WabiSabi.Themes + 1] = k end
-table.sort(WabiSabi.Themes)
+Bwin.Themes = {}
+for k in pairs(Palettes) do Bwin.Themes[#Bwin.Themes + 1] = k end
+table.sort(Bwin.Themes)
 
 local TITLE_H = 42
 local RAIL_W = 160
@@ -584,7 +584,7 @@ local function safe(fn, ...)
     if type(fn) ~= "function" then return end
     local ok, err = pcall(fn, ...)
     if not ok then
-        warn("[WabiSabi] callback error: " .. tostring(err))
+        warn("[Bwin] callback error: " .. tostring(err))
         pcall(function() UI:Notify({ Title = "Callback error", Content = tostring(err):gsub("^.-:%d+: ", ""):sub(1, 140), Duration = 6 }) end)
     end
 end
@@ -1545,17 +1545,17 @@ UI.Unloaded = false
 UI.Loaded = false
 
 function UI:Start()
-    local prev = _G.__WabiSabi
+    local prev = _G.__Bwin
     if prev and prev ~= UI and prev._RemoveAll then pcall(function() prev:_RemoveAll() end) end
-    _G.__WabiSabi = UI
-    if State.Running then _G.__WabiSabiToken = State.Token; return end
+    _G.__Bwin = UI
+    if State.Running then _G.__BwinToken = State.Token; return end
     local token = {}
-    _G.__WabiSabiToken = token; State.Token = token; State.Running = true
+    _G.__BwinToken = token; State.Token = token; State.Running = true
     UI.Loaded = true; UI.Unloaded = false
     task.spawn(function()
-        while _G.__WabiSabiToken == token do
+        while _G.__BwinToken == token do
             local ok, err = pcall(step)
-            if not ok then warn("[WabiSabi] " .. tostring(err)) end
+            if not ok then warn("[Bwin] " .. tostring(err)) end
             State.InStep = false
             Input.prevDown = Input.down
             task.wait()
@@ -1567,7 +1567,7 @@ function UI:Start()
 end
 
 function UI:Stop()
-    if _G.__WabiSabiToken == State.Token then _G.__WabiSabiToken = nil end
+    if _G.__BwinToken == State.Token then _G.__BwinToken = nil end
     State.Running = false
     UI:_RemoveAll()
 end
@@ -1603,7 +1603,7 @@ function UI:Minimize()
         State.Drag = false
         if not State.MinNotified then
             State.MinNotified = true
-            UI:Notify({ Title = "Wabi Sabi", Content = "Press " .. (State.MenuKeyName or "End") .. " or click the bubble to restore.", Duration = 6 })
+            UI:Notify({ Title = "Bwin", Content = "Press " .. (State.MenuKeyName or "End") .. " or click the bubble to restore.", Duration = 6 })
         end
     end
 end
@@ -1672,15 +1672,15 @@ function UI:SaveConfig(name)
         local s = serializeEl(el)
         if s then data[id] = s end
     end
-    pcall(function() makefolder("WabiSabi") end)
+    pcall(function() makefolder("Bwin") end)
     local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
-    if ok and json then pcall(function() writefile("WabiSabi/" .. name .. ".json", json) end) end
+    if ok and json then pcall(function() writefile("Bwin/" .. name .. ".json", json) end) end
     return ok == true
 end
 
 function UI:LoadConfig(name)
     name = name or UI.ConfigName or "default"
-    local ok, content = pcall(function() return readfile("WabiSabi/" .. name .. ".json") end)
+    local ok, content = pcall(function() return readfile("Bwin/" .. name .. ".json") end)
     if not ok or not content then return false end
     local dok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(content) end)
     if not dok or type(data) ~= "table" then return false end
@@ -1706,7 +1706,7 @@ end
 function UI:GetConfigs()
     local out = {}
     pcall(function()
-        for _, path in ipairs(listfiles("WabiSabi")) do
+        for _, path in ipairs(listfiles("Bwin")) do
             local name = tostring(path):match("([^/\\]+)%.json$")
             if name and name ~= "interface" then out[#out + 1] = name end
         end
@@ -1716,12 +1716,12 @@ function UI:GetConfigs()
 end
 
 function UI:SetAutoload(name)
-    pcall(function() makefolder("WabiSabi") end)
-    pcall(function() writefile("WabiSabi/autoload.txt", tostring(name)) end)
+    pcall(function() makefolder("Bwin") end)
+    pcall(function() writefile("Bwin/autoload.txt", tostring(name)) end)
 end
 
 function UI:GetAutoload()
-    local ok, content = pcall(function() return readfile("WabiSabi/autoload.txt") end)
+    local ok, content = pcall(function() return readfile("Bwin/autoload.txt") end)
     if ok and content and content ~= "" then return content end
     return nil
 end
@@ -1734,13 +1734,13 @@ end
 
 function UI:SaveInterfaceSettings()
     local data = { Theme = UI.ThemeName, Translucent = OP.Window < 1, MenuKey = State.MenuKey, MenuKeyName = State.MenuKeyName }
-    pcall(function() makefolder("WabiSabi") end)
+    pcall(function() makefolder("Bwin") end)
     local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
-    if ok and json then pcall(function() writefile("WabiSabi/interface.json", json) end) end
+    if ok and json then pcall(function() writefile("Bwin/interface.json", json) end) end
 end
 
 function UI:LoadInterfaceSettings()
-    local ok, content = pcall(function() return readfile("WabiSabi/interface.json") end)
+    local ok, content = pcall(function() return readfile("Bwin/interface.json") end)
     if not ok or not content then return nil end
     local dok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(content) end)
     if dok and type(data) == "table" then return data end
@@ -1880,4 +1880,4 @@ function UI:CreateWindow(cfg)
     return Window
 end
 
-return WabiSabi
+return Bwin
