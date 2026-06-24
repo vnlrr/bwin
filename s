@@ -1,4 +1,3 @@
---milan
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -28,7 +27,7 @@ local Theme = {
 }
 
 local OP = {
-    Window = 0.99,
+    Window = 0.85,
     Border = 0.40,
     Element = 0.16,
     ElementHover = 0.26,
@@ -36,7 +35,7 @@ local OP = {
     TabActive = 0.16,
     TabHover = 0.09,
     Control = 0.85,
-    Overlay = 0.99,
+    Overlay = 0.90,
 }
 
 local Palettes = {
@@ -465,7 +464,7 @@ local function outline(id, x, y, w, h, color, op, z, corner)
         Position = Vector2.new(x, y), Size = Vector2.new(w, h), Corner = corner or 0 })
 end
 local function text(id, str, x, y, size, color, z, center, op)
-    Draw(id, "Text", { Text = str, Size = size, Font = 1, Color = color, Center = center or false,
+    Draw(id, "Text", { Text = str, Size = size, Font = 2, Color = color, Center = center or false,
         Transparency = op or 1, ZIndex = z or 1, Position = Vector2.new(x, y), Outline = false })
 end
 local function circle(id, cx, cy, r, color, op, z)
@@ -799,10 +798,30 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
     local hovered = inBounds(x, y, w, h) and not State.Drag and not block
     local interactive = el.kind ~= "paragraph"
 
-    if interactive then el.hover.goal = hovered and 1 or 0 end
+    if interactive then
+        el.hover.goal = hovered and 1 or 0
+        if hovered and Input.clicked then
+            el.clickFlash = el.clickFlash or newSpring(1, 10)
+            el.clickFlash.v = 1
+        end
+    end
     springStep(el.hover, dt)
-    rect(idp .. ".bg", x, y, w, h, Theme.Element, lerp(OP.Element, OP.ElementHover, el.hover.v), z, 5)
-    outline(idp .. ".bd", x, y, w, h, Theme.ElementBorder, OP.Border, z + 1, 5)
+    
+    local flashV = 0
+    if el.clickFlash then
+        el.clickFlash.goal = 0
+        flashV = springStep(el.clickFlash, dt)
+    end
+    
+    local bgOp = lerp(OP.Element, OP.ElementHover, el.hover.v)
+    local bgColor = Theme.Element
+    if flashV > 0.01 then
+        bgColor = lerpColor(Theme.Element, Theme.Accent, flashV)
+        bgOp = lerp(bgOp, 0.5, flashV)
+    end
+    
+    rect(idp .. ".bg", x, y, w, h, bgColor, bgOp, z, 8)
+    outline(idp .. ".bd", x, y, w, h, Theme.ElementBorder, OP.Border, z + 1, 8)
 
     if el.kind == "paragraph" then
         local function alignedX(align, s, size)
@@ -845,8 +864,8 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
             local chX = px - 10 - chW
             local chY = y + math.floor((h - chH) / 2)
             chipHit = not block and inBounds(chX, chY, chW, chH)
-            rect(idp .. ".tkb", chX, chY, chW, chH, Theme.Control, chipHit and 0.95 or OP.Control, z + 2, 5)
-            outline(idp .. ".tkbd", chX, chY, chW, chH, listening and Theme.Accent or Theme.ElementBorder, 0.6, z + 3, 5)
+            rect(idp .. ".tkb", chX, chY, chW, chH, Theme.Control, chipHit and 0.95 or OP.Control, z + 2,  8)
+            outline(idp .. ".tkbd", chX, chY, chW, chH, listening and Theme.Accent or Theme.ElementBorder, 0.6, z + 3,  8)
             local kt = listening and "..." or ("[" .. (kb.keyName or "None") .. "]")
             text(idp .. ".tkt", kt, chX + chW / 2, chY + chH / 2, 11, listening and Theme.Accent or Theme.Text, z + 3, true)
             if chipHit and Input.clicked then State.KBListening = kb end
@@ -911,8 +930,8 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
         local bx = x + w - 12 - boxW
         local by = el.desc and (y + 28) or (y + math.floor((h - boxH) / 2))
         local bHover = not block and inBounds(bx, by, boxW, boxH)
-        rect(idp .. ".db", bx, by, boxW, boxH, Theme.Control, bHover and 0.95 or OP.Control, z + 2, 5)
-        outline(idp .. ".dbd", bx, by, boxW, boxH, Theme.ElementBorder, 0.5, z + 3, 5)
+        rect(idp .. ".db", bx, by, boxW, boxH, Theme.Control, bHover and 0.95 or OP.Control, z + 2,  8)
+        outline(idp .. ".dbd", bx, by, boxW, boxH, Theme.ElementBorder, 0.5, z + 3,  8)
         text(idp .. ".dt", ddDisplay(el), bx + 8, by + 6, 12, Theme.Text, z + 3)
         text(idp .. ".dc", "v", bx + boxW - 13, by + 6, 12, Theme.SubText, z + 3)
         if bHover and Input.clicked then
@@ -926,8 +945,8 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
         local by = y + math.floor((h - boxH) / 2)
         local listening = (State.KBListening == el)
         local bHover = not block and inBounds(bx, by, boxW, boxH)
-        rect(idp .. ".kb", bx, by, boxW, boxH, Theme.Control, bHover and 0.95 or OP.Control, z + 2, 5)
-        outline(idp .. ".kbd", bx, by, boxW, boxH, listening and Theme.Accent or Theme.ElementBorder, 0.6, z + 3, 5)
+        rect(idp .. ".kb", bx, by, boxW, boxH, Theme.Control, bHover and 0.95 or OP.Control, z + 2,  8)
+        outline(idp .. ".kbd", bx, by, boxW, boxH, listening and Theme.Accent or Theme.ElementBorder, 0.6, z + 3,  8)
         local txt = listening and "..." or ("[" .. (el.keyName or "None") .. "]")
         text(idp .. ".kt", txt, bx + boxW / 2, by + boxH / 2, 12, listening and Theme.Accent or Theme.Text, z + 3, true)
         if bHover and Input.clicked then State.KBListening = el end
@@ -937,9 +956,9 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
         local bx = x + w - 12 - sw
         local by = y + math.floor((h - swh) / 2)
         local bHover = not block and inBounds(bx, by, sw, swh)
-        if el.hasAlpha then rect(idp .. ".cwbk", bx, by, sw, swh, Color3.fromRGB(55, 55, 55), 1, z + 2, 5) end
-        rect(idp .. ".cw", bx, by, sw, swh, el.value, el.hasAlpha and el.alpha or 1, z + 3, 5)
-        outline(idp .. ".cwd", bx, by, sw, swh, Theme.ElementBorder, 0.6, z + 4, 5)
+        if el.hasAlpha then rect(idp .. ".cwbk", bx, by, sw, swh, Color3.fromRGB(55, 55, 55), 1, z + 2,  8) end
+        rect(idp .. ".cw", bx, by, sw, swh, el.value, el.hasAlpha and el.alpha or 1, z + 3,  8)
+        outline(idp .. ".cwd", bx, by, sw, swh, Theme.ElementBorder, 0.6, z + 4,  8)
         if bHover and Input.clicked then
             State.Overlay = { kind = "colorpicker", el = el, ax = bx + sw, ay = by + swh + 4,
                 origH = el.h, origS = el.s, origV = el.v, origAlpha = el.alpha }
@@ -952,8 +971,8 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
         local by = y + math.floor((h - boxH) / 2)
         local focused = State.Focused and State.Focused.owner == el
         local bHover = not block and inBounds(bx, by, boxW, boxH)
-        rect(idp .. ".ib", bx, by, boxW, boxH, Theme.Control, focused and 0.95 or OP.Control, z + 2, 5)
-        outline(idp .. ".ibd", bx, by, boxW, boxH, focused and Theme.Accent or Theme.ElementBorder, 0.6, z + 3, 5)
+        rect(idp .. ".ib", bx, by, boxW, boxH, Theme.Control, focused and 0.95 or OP.Control, z + 2,  8)
+        outline(idp .. ".ibd", bx, by, boxW, boxH, focused and Theme.Accent or Theme.ElementBorder, 0.6, z + 3,  8)
         local raw = (focused and State.Focused.buf) or el.text or ""
         local maxc = math.max(1, math.floor((boxW - 18) / 6.5))
         local body = (#raw > maxc) and raw:sub(#raw - maxc + 1) or raw
@@ -1011,14 +1030,14 @@ local function renderOverlay(dt)
             State.Overlay = nil; return true
         end
 
-        rect("ov.bg", ov.x, ov.y, panelW, panelH, Theme.OverlayBg, OP.Overlay * a, Z, 5)
-        outline("ov.bd", ov.x, ov.y, panelW, panelH, Theme.OverlayBorder, 0.7 * a, Z + 1, 5)
+        rect("ov.bg", ov.x, ov.y, panelW, panelH, Theme.OverlayBg, OP.Overlay * a, Z,  8)
+        outline("ov.bd", ov.x, ov.y, panelW, panelH, Theme.OverlayBorder, 0.7 * a, Z + 1,  8)
 
         if el.searchable then
             local sbx, sby, sbw, sbh = ov.x + 4, ov.y + 4, panelW - 8, 22
             local searching = State.Focused and State.Focused.owner == el
-            rect("ov.sb", sbx, sby, sbw, sbh, Theme.Control, searching and 0.95 or OP.Control, Z + 2, 4)
-            outline("ov.sbd", sbx, sby, sbw, sbh, searching and Theme.Accent or Theme.ElementBorder, 0.6 * a, Z + 3, 4)
+            rect("ov.sb", sbx, sby, sbw, sbh, Theme.Control, searching and 0.95 or OP.Control, Z + 2,  8)
+            outline("ov.sbd", sbx, sby, sbw, sbh, searching and Theme.Accent or Theme.ElementBorder, 0.6 * a, Z + 3,  8)
             local stext = el.searchText
             local caret = (searching and math.floor(tick() * 2) % 2 == 0) and "|" or ""
             local shownS = (stext ~= "" and (stext .. caret)) or (caret ~= "" and caret) or el.searchPlaceholder
@@ -1040,7 +1059,7 @@ local function renderOverlay(dt)
                 ov.rowHover[i] = ov.rowHover[i] or newSpring(0, 18)
                 ov.rowHover[i].goal = rHover and 1 or 0
                 local rh = springStep(ov.rowHover[i], dt)
-                rect("ov.r" .. i, ov.x + 2, ry, panelW - 4 - barW, rowH - 2, Theme.TabHighlight, 0.14 * rh * a, Z + 2, 4)
+                rect("ov.r" .. i, ov.x + 2, ry, panelW - 4 - barW, rowH - 2, Theme.TabHighlight, 0.14 * rh * a, Z + 2,  8)
                 text("ov.t" .. i, disp(opt), ov.x + 10, ry + 7, 12, selected and Theme.Accent or Theme.Text, Z + 3, false, a)
                 if selected then text("ov.m" .. i, "*", ov.x + panelW - barW - 16, ry + 6, 13, Theme.Accent, Z + 3, false, a) end
                 if rHover and Input.clicked then
@@ -1105,8 +1124,8 @@ local function renderOverlay(dt)
         local rgbY = fieldsY + fieldH + 6
         local btnY = rgbY + fieldH + 8
 
-        rect("ov.bg", px, py, panelW, panelH, Theme.OverlayBg, OP.Overlay, Z, 5)
-        outline("ov.bd", px, py, panelW, panelH, Theme.OverlayBorder, 0.7, Z + 1, 5)
+        rect("ov.bg", px, py, panelW, panelH, Theme.OverlayBg, OP.Overlay, Z,  8)
+        outline("ov.bd", px, py, panelW, panelH, Theme.OverlayBorder, 0.7, Z + 1,  8)
 
         if Input.down then
             if Input.clicked and inBounds(svx, svy, sv, sv) then ov.drag = "sv"
@@ -1166,8 +1185,8 @@ local function renderOverlay(dt)
         end
         local function drawField(fx, fy, fw, id, valStr, onCommit)
             local foc = fieldFocused(id)
-            rect("ov.f_" .. id, fx, fy, fw, fieldH, Theme.Control, foc and 0.95 or OP.Control, Z + 3, 4)
-            outline("ov.fd_" .. id, fx, fy, fw, fieldH, foc and Theme.Accent or Theme.ElementBorder, 0.6, Z + 4, 4)
+            rect("ov.f_" .. id, fx, fy, fw, fieldH, Theme.Control, foc and 0.95 or OP.Control, Z + 3,  8)
+            outline("ov.fd_" .. id, fx, fy, fw, fieldH, foc and Theme.Accent or Theme.ElementBorder, 0.6, Z + 4,  8)
             local shownF = valStr
             if foc then
                 local caret = (math.floor(tick() * 2) % 2 == 0) and "|" or ""
@@ -1194,13 +1213,13 @@ local function renderOverlay(dt)
         local function closePicker() if State.Focused and State.Focused.owner == el then State.Focused = nil end; State.Overlay = nil end
         local halfW = math.floor((innerW - 8) / 2)
         local cancelHover = inBounds(px + pad, btnY, halfW, 26)
-        rect("ov.cancel", px + pad, btnY, halfW, 26, Theme.Control, cancelHover and 0.95 or 0.9, Z + 3, 5)
-        outline("ov.canceld", px + pad, btnY, halfW, 26, Theme.OverlayBorder, 0.6, Z + 4, 5)
+        rect("ov.cancel", px + pad, btnY, halfW, 26, Theme.Control, cancelHover and 0.95 or 0.9, Z + 3,  8)
+        outline("ov.canceld", px + pad, btnY, halfW, 26, Theme.OverlayBorder, 0.6, Z + 4,  8)
         text("ov.cancelt", "Cancel", px + pad + halfW / 2 - textW("Cancel", 12) / 2, btnY + 7, 12, Theme.Text, Z + 5)
         local doneX = px + pad + halfW + 8
         local doneHover = inBounds(doneX, btnY, halfW, 26)
-        rect("ov.done", doneX, btnY, halfW, 26, Theme.Accent, 1, Z + 3, 5)
-        outline("ov.doned", doneX, btnY, halfW, 26, Theme.Accent, 0.6, Z + 4, 5)
+        rect("ov.done", doneX, btnY, halfW, 26, Theme.Accent, 1, Z + 3,  8)
+        outline("ov.doned", doneX, btnY, halfW, 26, Theme.Accent, 0.6, Z + 4,  8)
         text("ov.donet", "Done", doneX + halfW / 2 - textW("Done", 12) / 2, btnY + 7, 12, Color3.fromRGB(15, 15, 15), Z + 5)
         if Input.clicked then
             if cancelHover then
@@ -1309,7 +1328,7 @@ local function renderWindow(dt)
     line("win.grip2", gx + 9, win.y + win.h - 3, win.x + win.w - 3, gy + 9, Theme.SubText, gripHover and 0.9 or 0.45, 62)
 
     outline("win.bd", win.x - 1, win.y - 1, win.w + 2, win.h + 2, Theme.WindowBorder, OP.Border, 10, 9)
-    rect("win.bg", win.x, win.y, win.w, win.h, Theme.WindowBg, OP.Window, 11, 8)
+    rect("win.bg", win.x, win.y, win.w, win.h, Theme.WindowBg, OP.Window, 11, 12)
 
     local block = renderOverlay(dt)
     if State.Dialog then block = true end
@@ -1402,7 +1421,7 @@ local function renderWindow(dt)
         rect("win.curtain", win.x + RAIL_W + 1, cvy, win.w - RAIL_W - 1, cvh, Theme.WindowBg, math.min(1, State.TabCurtain.v), 50, 0)
     end
 
-    rect("win.tbmask", win.x, win.y, win.w, TITLE_H, Theme.WindowBg, OP.Window, 58, 8)
+    rect("win.tbmask", win.x, win.y, win.w, TITLE_H, Theme.WindowBg, OP.Window, 58, 12)
     text("win.title", UI.Title or "Wabi", win.x + 18, win.y + 13, 18, Theme.Title, 62)
     if UI.SubTitle and UI.SubTitle ~= "" then
         text("win.sub", UI.SubTitle, win.x + 18 + textW(UI.Title or "Wabi", 18) + 10, win.y + 18, 13, Theme.SubText, 62)
@@ -1485,8 +1504,8 @@ local function renderNotifs(dt)
             y = y - hh
             local x = vw - margin - w + n.slide.v * (w + margin + 8)
             local a = n.alpha.v
-            rect("nf.bg" .. n.id, x, y, w, hh, Theme.OverlayBg, OP.Overlay * a, Z, 6)
-            outline("nf.bd" .. n.id, x, y, w, hh, Theme.Accent, 0.5 * a, Z + 1, 6)
+            rect("nf.bg" .. n.id, x, y, w, hh, Theme.OverlayBg, OP.Overlay * a, Z,  8)
+            outline("nf.bd" .. n.id, x, y, w, hh, Theme.Accent, 0.5 * a, Z + 1,  8)
             text("nf.t" .. n.id, n.title, x + 14, y + 12, 13, Theme.Text, Z + 2, false, a)
             local cx, cy = x + w - 22, y + 11
             text("nf.x" .. n.id, "x", cx, cy, 14, Theme.SubText, Z + 3, false, a)
@@ -1942,3 +1961,4 @@ function UI:CreateWindow(cfg)
 end
 
 return Bwin
+
