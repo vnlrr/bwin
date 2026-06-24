@@ -1,3 +1,4 @@
+--milan
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -332,6 +333,12 @@ local Palettes = {
         Title = Color3.fromRGB(17, 17, 17), SubText = Color3.fromRGB(111, 111, 111), TabText = Color3.fromRGB(17, 17, 17), TabTextActive = Color3.fromRGB(17, 17, 17), TabHighlight = Color3.fromRGB(232, 232, 232),
         Element = Color3.fromRGB(255, 255, 255), ElementBorder = Color3.fromRGB(206, 206, 206), Text = Color3.fromRGB(17, 17, 17), ToggleSlider = Color3.fromRGB(233, 84, 32), ToggleKnobOn = Color3.fromRGB(255, 255, 255),
         Control = Color3.fromRGB(255, 255, 255), OverlayBg = Color3.fromRGB(255, 255, 255), OverlayBorder = Color3.fromRGB(206, 206, 206),
+    },
+    ["Milan"] = {
+        Accent = Color3.fromRGB(220, 20, 60), WindowBg = Color3.fromRGB(250, 250, 250), WindowBorder = Color3.fromRGB(0, 0, 0), TitleBarLine = Color3.fromRGB(200, 200, 200), RailLine = Color3.fromRGB(200, 200, 200),
+        Title = Color3.fromRGB(0, 0, 0), SubText = Color3.fromRGB(100, 100, 100), TabText = Color3.fromRGB(100, 100, 100), TabTextActive = Color3.fromRGB(0, 0, 0), TabHighlight = Color3.fromRGB(220, 220, 220),
+        Element = Color3.fromRGB(255, 255, 255), ElementBorder = Color3.fromRGB(0, 0, 0), Text = Color3.fromRGB(0, 0, 0), ToggleSlider = Color3.fromRGB(220, 20, 60), ToggleKnobOn = Color3.fromRGB(255, 255, 255),
+        Control = Color3.fromRGB(240, 240, 240), OverlayBg = Color3.fromRGB(255, 255, 255), OverlayBorder = Color3.fromRGB(0, 0, 0),
     },
     Light = {
         WindowBg = Color3.fromRGB(243, 243, 243), WindowBorder = Color3.fromRGB(200, 200, 200),
@@ -1067,7 +1074,16 @@ local function renderOverlay(dt)
             end
         end
 
-        if Input.clicked and not ov.closing and not inBounds(ov.x, ov.y, panelW, panelH) then ov.closing = true end
+        if Input.clicked and not ov.closing then
+            if not inBounds(ov.x, ov.y, panelW, panelH) then
+                ov.closing = true
+            elseif el.searchable and State.Focused and State.Focused.owner == el then
+                local sbx, sby, sbw, sbh = ov.x + 4, ov.y + 4, panelW - 8, 22
+                if not inBounds(sbx, sby, sbw, sbh) then
+                    State.Focused = nil
+                end
+            end
+        end
         return true
 
     elseif ov.kind == "colorpicker" then
@@ -1807,7 +1823,7 @@ function UI:CreateWindow(cfg)
     UI.SubTitle = cfg.SubTitle or ""
     UI.ConfigName = cfg.ConfigName
     if cfg.Translucent ~= nil then UI:SetTranslucent(cfg.Translucent) end
-    if cfg.Theme then UI:SetTheme(cfg.Theme) end
+    if cfg.Theme then UI:SetTheme(cfg.Theme) else UI:SetTheme("Milan") end
     if cfg.MinimizeKey ~= nil then
         local vk, name = resolveKey(cfg.MinimizeKey)
         if vk then State.MenuKey = vk; State.MenuKeyName = name end
@@ -1906,7 +1922,7 @@ function UI:CreateWindow(cfg)
         if s.Translucent ~= nil then UI:SetTranslucent(s.Translucent) end
         if s.MenuKey then State.MenuKey = s.MenuKey; State.MenuKeyName = s.MenuKeyName or KeyName[s.MenuKey] or "?" end
         local section = tab:AddSection("Interface")
-        section:AddDropdown({ Title = "Theme", Description = "Changes the interface theme", Options = UI.Themes, Default = UI.ThemeName or "Dark", Callback = function(v)
+        section:AddDropdown({ Title = "Theme", Description = "Changes the interface theme", Options = UI.Themes, Default = UI.ThemeName or "Milan", Callback = function(v)
             UI:SetTheme(v); UI:SaveInterfaceSettings()
         end })
         section:AddToggle({ Title = "Translucent", Description = "Subtle translucency vs solid", Default = OP.Window < 1, Callback = function(v)
