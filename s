@@ -858,14 +858,7 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
     if interactive then el.hover.goal = hovered and 1 or 0 end
     springStep(el.hover, dt)
     rect(idp .. ".bg", x, y, w, h, Theme.Element, lerp(OP.Element, OP.ElementHover, el.hover.v), z, 6)
-    outline(idp .. ".bd", x, y, w, h, lerpColor(Theme.ElementBorder, Theme.Accent, el.hover.v * 0.45), OP.Border, z + 1, 6)
-    innerHi(idp .. ".ih", x, y, w, z + 1, 0.035 + 0.05 * el.hover.v)
-    if interactive then
-        local barH = (h - 12) * el.hover.v
-        if barH > 0.5 then
-            rect(idp .. ".hb", x, y + (h - barH) / 2, 2.5, barH, Theme.Accent, 0.9 * el.hover.v, z + 1, 2)
-        end
-    end
+    outline(idp .. ".bd", x, y, w, h, Theme.ElementBorder, OP.Border, z + 1, 6)
 
     if el.kind == "paragraph" then
         local function alignedX(align, s, size)
@@ -926,7 +919,6 @@ local function processEl(el, idp, x, y, w, h, dt, z, block)
         end
         springStep(el.anim, dt)
         local t = el.anim.v
-        if t > 0.01 then rect(idp .. ".pillg", px - 3, py - 3, pillW + 6, pillH + 6, Theme.Accent, 0.18 * t, z + 1, 12) end
         rect(idp .. ".pill", px, py, pillW, pillH, Theme.Accent, t, z + 2, 9)
         outline(idp .. ".pilb", px, py, pillW, pillH, lerpColor(Theme.ToggleSlider, Theme.Accent, t), 0.55, z + 3, 9)
         circle(idp .. ".knob", px + lerp(9, 27, t), py + pillH / 2, 6, lerpColor(Theme.ToggleSlider, Theme.ToggleKnobOn, t), lerp(0.6, 1, t), z + 4)
@@ -1494,7 +1486,6 @@ local function renderWindow(dt)
     State.IndOff.goal = (State.ActiveTab - 1) * 38
     if not State.IndInit then State.IndOff.v = State.IndOff.goal; State.IndInit = true end
     spring2Step(State.IndOff, dt)
-    rect("tab.indg", win.x + 7, tabY0 + State.IndOff.v + 5, 6, 22, Theme.Accent, 0.20, 60, 3)
     rect("tab.ind", win.x + 8, tabY0 + State.IndOff.v + 8, 3, 16, Theme.Accent, 1, 61, 2)
 end
 
@@ -1513,26 +1504,37 @@ local function renderNotifs(dt)
             table.remove(Notifs, idx)
         else
             springStep(n.slide, dt); springStep(n.alpha, dt)
-            local hh = 14 + 18 + #n.lines * 15 + (n.sub and 16 or 0) + 12
+            local hasProg = n.duration ~= nil
+            local hh = 12 + 17 + #n.lines * 15 + (n.sub and 15 or 0) + (hasProg and 10 or 6)
             y = y - hh
             local x = vw - margin - w + n.slide.v * (w + margin + 8)
             local a = n.alpha.v
-            shadow("nf" .. n.id, x, y, w, hh, Z, 6, 10, 0.16 * a, 5)
-            rect("nf.bg" .. n.id, x, y, w, hh, Theme.OverlayBg, OP.Overlay * a, Z, 6)
-            rect("nf.ac" .. n.id, x, y + 6, 3, hh - 12, Theme.Accent, a, Z + 1, 2)
-            outline("nf.bd" .. n.id, x, y, w, hh, Theme.Accent, 0.5 * a, Z + 1, 6)
-            text("nf.t" .. n.id, n.title, x + 14, y + 12, 13, Theme.Text, Z + 2, false, a)
-            local cx, cy = x + w - 22, y + 11
-            text("nf.x" .. n.id, "x", cx, cy, 14, Theme.SubText, Z + 3, false, a)
-            if not n.dying and Input.clicked and inBounds(cx - 5, cy - 3, 20, 20) then
+            local accent = n.color or Theme.Accent
+            shadow("nf" .. n.id, x, y, w, hh, Z, 7, 11, 0.18 * a, 5)
+            rect("nf.bg" .. n.id, x, y, w, hh, Theme.OverlayBg, OP.Overlay * a, Z, 7)
+            outline("nf.bd" .. n.id, x, y, w, hh, Theme.OverlayBorder, 0.7 * a, Z + 1, 7)
+            circle("nf.dot" .. n.id, x + 16, y + 16, 3.5, accent, a, Z + 2)
+            text("nf.t" .. n.id, n.title, x + 28, y + 10, 13, Theme.Title, Z + 2, false, a)
+            local cbS = 16
+            local cx, cy = x + w - 12 - cbS, y + 8
+            local cHover = not n.dying and inBounds(cx, cy, cbS, cbS)
+            rect("nf.xbg" .. n.id, cx, cy, cbS, cbS, Theme.Control, (cHover and 0.8 or 0) * a, Z + 2, 4)
+            text("nf.x" .. n.id, "×", cx + cbS / 2, cy + cbS / 2, 14, cHover and Theme.Text or Theme.SubText, Z + 3, true, a)
+            if cHover and Input.clicked then
                 n.dying = true; n.diedAt = now; n.slide.goal = 1; n.alpha.goal = 0
             end
-            local ly = y + 32
+            local ly = y + 30
             for li, ln in ipairs(n.lines) do
-                text("nf.c" .. n.id .. "_" .. li, ln, x + 14, ly, 12, Theme.SubText, Z + 2, false, a)
+                text("nf.c" .. n.id .. "_" .. li, ln, x + 28, ly, 12, Theme.SubText, Z + 2, false, a)
                 ly = ly + 15
             end
-            if n.sub then text("nf.s" .. n.id, n.sub, x + 14, ly, 11, Color3.fromRGB(120, 120, 120), Z + 2, false, a) end
+            if n.sub then text("nf.s" .. n.id, n.sub, x + 28, ly, 11, Theme.SubText, Z + 2, false, a); ly = ly + 14 end
+            if hasProg then
+                local frac = clamp(1 - (now - n.born) / n.duration, 0, 1)
+                local pbx, pbw, pby = x + 14, w - 28, y + hh - 7
+                rect("nf.pbk" .. n.id, pbx, pby, pbw, 2, Theme.RailLine, 0.5 * a, Z + 2, 1)
+                rect("nf.pb" .. n.id, pbx, pby, math.max(0, pbw * frac), 2, accent, a, Z + 3, 1)
+            end
             y = y - 10
         end
     end
@@ -1689,7 +1691,7 @@ function UI:Notify(cfg)
     if #lines > 0 and lines[#lines] == "" then table.remove(lines) end
     local n = {
         id = NotifId, title = cfg.Title or "Notification", lines = lines, sub = cfg.SubContent,
-        duration = cfg.Duration, born = tick(),
+        duration = cfg.Duration, born = tick(), color = cfg.Color,
         slide = newSpring(1, 13), alpha = newSpring(0, 13), dying = false,
     }
     n.slide.goal = 0; n.alpha.goal = 1
