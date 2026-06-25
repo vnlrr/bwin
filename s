@@ -1338,7 +1338,7 @@ local function renderWindow(dt)
         if not State.Drag and not State.Resizing and not State.Overlay then
             if inBounds(gx, gy, gripN, gripN) then
                 State.Resizing = true
-            elseif inBounds(win.x, win.y, win.w - 84, TITLE_H) then
+            elseif inBounds(win.x, win.y, win.w - 116, TITLE_H) then
                 if State.Maximized then UI:Maximize(false) end
                 State.Drag = true
                 State.DragOff = Vector2.new(clamp(Input.mx - win.x, 0, win.w - 40), Input.my - win.y)
@@ -1449,7 +1449,17 @@ local function renderWindow(dt)
         text("win.sub", UI.SubTitle, sx, win.y + 18, 13, Theme.Accent, 62)
     end
     local mbW, mbH = 28, 22
-    local mbX, mbY = win.x + win.w - 16 - mbW, win.y + 12
+    -- Close (X): rightmost, unloads the menu. Turns red on hover.
+    local clX, clY = win.x + win.w - 16 - mbW, win.y + 12
+    local clHover = not block and inBounds(clX, clY, mbW, mbH)
+    rect("win.clbg", clX, clY, mbW, mbH, clHover and Color3.fromRGB(216, 72, 72) or Theme.Control, clHover and 0.85 or 0, 60, 5)
+    local clcx, clcy = clX + mbW / 2, clY + mbH / 2
+    local clCol = clHover and Color3.fromRGB(255, 255, 255) or Theme.Text
+    line("win.cl1", clcx - 4, clcy - 4, clcx + 4, clcy + 4, clCol, 0.9, 61)
+    line("win.cl2", clcx - 4, clcy + 4, clcx + 4, clcy - 4, clCol, 0.9, 61)
+    if clHover and Input.clicked then UI:Destroy() end
+    -- Minimize
+    local mbX, mbY = clX - 6 - mbW, win.y + 12
     local mbHover = not block and inBounds(mbX, mbY, mbW, mbH)
     rect("win.minbg", mbX, mbY, mbW, mbH, Theme.Control, mbHover and 0.6 or 0, 60, 5)
     line("win.min", mbX + 9, mbY + math.floor(mbH / 2), mbX + mbW - 9, mbY + math.floor(mbH / 2), Theme.Text, 0.9, 61)
