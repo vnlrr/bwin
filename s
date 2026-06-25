@@ -2,28 +2,28 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-WabiSabi = {}
-local UI = WabiSabi
+bwin = {}
+local UI = bwin
 
 local Theme = {
-    Accent = Color3.fromRGB(96, 205, 255),
-    WindowBg = Color3.fromRGB(36, 36, 36),
+    Accent = Color3.fromRGB(99, 188, 255),
+    WindowBg = Color3.fromRGB(28, 29, 33),
     WindowBorder = Color3.fromRGB(0, 0, 0),
-    TitleBarLine = Color3.fromRGB(75, 75, 75),
-    RailLine = Color3.fromRGB(60, 60, 60),
-    Title = Color3.fromRGB(240, 240, 240),
-    SubText = Color3.fromRGB(170, 170, 170),
-    TabText = Color3.fromRGB(150, 150, 150),
-    TabTextActive = Color3.fromRGB(240, 240, 240),
-    TabHighlight = Color3.fromRGB(130, 130, 130),
-    Element = Color3.fromRGB(130, 130, 130),
-    ElementBorder = Color3.fromRGB(20, 20, 20),
-    Text = Color3.fromRGB(240, 240, 240),
-    ToggleSlider = Color3.fromRGB(120, 120, 120),
-    ToggleKnobOn = Color3.fromRGB(10, 10, 10),
-    Control = Color3.fromRGB(66, 66, 66),
-    OverlayBg = Color3.fromRGB(42, 42, 42),
-    OverlayBorder = Color3.fromRGB(20, 20, 20),
+    TitleBarLine = Color3.fromRGB(58, 60, 66),
+    RailLine = Color3.fromRGB(48, 50, 56),
+    Title = Color3.fromRGB(244, 245, 248),
+    SubText = Color3.fromRGB(150, 154, 162),
+    TabText = Color3.fromRGB(140, 144, 152),
+    TabTextActive = Color3.fromRGB(244, 245, 248),
+    TabHighlight = Color3.fromRGB(140, 146, 158),
+    Element = Color3.fromRGB(140, 146, 158),
+    ElementBorder = Color3.fromRGB(16, 17, 20),
+    Text = Color3.fromRGB(238, 240, 244),
+    ToggleSlider = Color3.fromRGB(108, 112, 120),
+    ToggleKnobOn = Color3.fromRGB(8, 9, 11),
+    Control = Color3.fromRGB(52, 54, 60),
+    OverlayBg = Color3.fromRGB(36, 38, 43),
+    OverlayBorder = Color3.fromRGB(16, 17, 20),
 }
 
 local OP = {
@@ -344,12 +344,12 @@ local Palettes = {
     },
 }
 for k, v in pairs(Theme) do Palettes.Dark[k] = v end
-WabiSabi.Themes = {}
-for k in pairs(Palettes) do WabiSabi.Themes[#WabiSabi.Themes + 1] = k end
-table.sort(WabiSabi.Themes)
+bwin.Themes = {}
+for k in pairs(Palettes) do bwin.Themes[#bwin.Themes + 1] = k end
+table.sort(bwin.Themes)
 
-local TITLE_H = 42
-local RAIL_W = 160
+local TITLE_H = 46
+local RAIL_W = 172
 
 local function clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
 local function lerp(a, b, t) return a + (b - a) * t end
@@ -411,6 +411,7 @@ local CharScanList = {}
 for vk in pairs(CharMap) do CharScanList[#CharScanList + 1] = vk end
 
 local Cache, Visible, CurTick = {}, {}, 0
+local GAlpha = 1  -- global opacity multiplier, driven by the open/close animation
 
 local function eq(a, b)
     if a == b then return true end
@@ -450,28 +451,28 @@ local function cleanup()
 end
 
 local function rect(id, x, y, w, h, color, op, z, corner)
-    Draw(id, "Square", { Filled = true, Color = color, Transparency = op or 1, ZIndex = z or 1,
+    Draw(id, "Square", { Filled = true, Color = color, Transparency = (op or 1) * GAlpha, ZIndex = z or 1,
         Position = Vector2.new(x, y), Size = Vector2.new(w, h), Corner = corner or 0 })
 end
 local function outline(id, x, y, w, h, color, op, z, corner)
-    Draw(id, "Square", { Filled = false, Color = color, Transparency = op or 1, ZIndex = z or 1,
+    Draw(id, "Square", { Filled = false, Color = color, Transparency = (op or 1) * GAlpha, ZIndex = z or 1,
         Position = Vector2.new(x, y), Size = Vector2.new(w, h), Corner = corner or 0 })
 end
 local function text(id, str, x, y, size, color, z, center, op)
     Draw(id, "Text", { Text = str, Size = size, Font = 1, Color = color, Center = center or false,
-        Transparency = op or 1, ZIndex = z or 1, Position = Vector2.new(x, y), Outline = false })
+        Transparency = (op or 1) * GAlpha, ZIndex = z or 1, Position = Vector2.new(x, y), Outline = false })
 end
 local function circle(id, cx, cy, r, color, op, z)
-    Draw(id, "Circle", { Filled = true, Color = color, Transparency = op or 1, ZIndex = z or 1,
+    Draw(id, "Circle", { Filled = true, Color = color, Transparency = (op or 1) * GAlpha, ZIndex = z or 1,
         Position = Vector2.new(cx, cy), Radius = r, NumSides = 32 })
 end
 local function line(id, x1, y1, x2, y2, color, op, z)
-    Draw(id, "Line", { Color = color, Transparency = op or 1, ZIndex = z or 1,
+    Draw(id, "Line", { Color = color, Transparency = (op or 1) * GAlpha, ZIndex = z or 1,
         From = Vector2.new(x1, y1), To = Vector2.new(x2, y2), Thickness = 1 })
 end
 local function image(id, data, x, y, w, h, op, z, rounding)
     Draw(id, "Image", { Data = data, Size = Vector2.new(w, h), Position = Vector2.new(x, y),
-        Transparency = op or 1, ZIndex = z or 1, Rounding = rounding or 0 })
+        Transparency = (op or 1) * GAlpha, ZIndex = z or 1, Rounding = rounding or 0 })
 end
 -- Soft drop shadow: stacked, outward-expanding dark squares under a panel.
 local ShadowColor = Color3.fromRGB(0, 0, 0)
@@ -497,6 +498,15 @@ local function textW(str, size) return #tostring(str) * size * 0.52 end
 local function newSpring(v, speed) return { v = v, goal = v, speed = speed or 16 } end
 local function springStep(s, dt)
     s.v = s.v + (s.goal - s.v) * (1 - math.exp(-s.speed * dt))
+    return s.v
+end
+-- Damped harmonic spring: overshoots and settles (used where a bit of bounce reads nicely).
+local function newSpring2(v, freq, damp) return { v = v, goal = v, vel = 0, freq = freq or 14, damp = damp or 0.7 } end
+local function spring2Step(s, dt)
+    local f = s.freq
+    local a = (s.goal - s.v) * (f * f) - s.vel * (2 * s.damp * f)
+    s.vel = s.vel + a * dt
+    s.v = s.v + s.vel * dt
     return s.v
 end
 
@@ -537,8 +547,9 @@ local State = {
 local Tabs = {}
 local AllKeybinds = {}
 State.TabCurtain = newSpring(0, 16)
-State.IndOff = newSpring(0, 18)
+State.IndOff = newSpring2(0, 17, 0.62)
 State.IndInit = false
+State.Appear = newSpring(0, 11)
 
 local function center()
     local w, h = State.Win.w, State.Win.h
@@ -602,7 +613,7 @@ local function safe(fn, ...)
     if type(fn) ~= "function" then return end
     local ok, err = pcall(fn, ...)
     if not ok then
-        warn("[WabiSabi] callback error: " .. tostring(err))
+        warn("[bwin] callback error: " .. tostring(err))
         pcall(function() UI:Notify({ Title = "Callback error", Content = tostring(err):gsub("^.-:%d+: ", ""):sub(1, 140), Duration = 6 }) end)
     end
 end
@@ -637,6 +648,17 @@ end
 local function mkButton(c)
     return { kind = "button", title = c.Title or "Button", desc = c.Description,
         callback = c.Callback, hover = newSpring(0, 14) }
+end
+
+local function mkDivider(c)
+    c = c or {}
+    return { kind = "divider", title = c.Title and tostring(c.Title) or nil, hover = newSpring(0, 14) }
+end
+
+local function mkLabel(c)
+    c = c or {}
+    return { kind = "label", title = c.Title or c.Text or "Label", color = c.Color,
+        align = alignOf(c.Alignment), hover = newSpring(0, 14) }
 end
 
 local function mkToggle(c)
@@ -799,6 +821,8 @@ local function blurField()
 end
 
 local function cardHeight(el)
+    if el.kind == "divider" then return el.title and 26 or 16 end
+    if el.kind == "label" then return 26 end
     if el.kind == "paragraph" then return 24 + 18 + #el.lines * 15 end
     if el.kind == "slider" then return el.desc and 66 or 50 end
     if el.kind == "dropdown" then return el.desc and 60 or 44 end
@@ -807,6 +831,28 @@ end
 
 local function processEl(el, idp, x, y, w, h, dt, z, block)
     local hovered = inBounds(x, y, w, h) and not State.Drag and not block
+
+    if el.kind == "divider" then
+        local ly = y + math.floor(h / 2)
+        if el.title then
+            local tw = textW(el.title, 12)
+            local mid = x + math.floor(w / 2)
+            line(idp .. ".l1", x + 4, ly, mid - tw / 2 - 8, ly, Theme.RailLine, 0.5, z + 1)
+            line(idp .. ".l2", mid + tw / 2 + 8, ly, x + w - 4, ly, Theme.RailLine, 0.5, z + 1)
+            text(idp .. ".t", el.title, mid, ly - 7, 12, Theme.SubText, z + 2, true)
+        else
+            line(idp .. ".l1", x + 4, ly, x + w - 4, ly, Theme.RailLine, 0.5, z + 1)
+        end
+        return
+    elseif el.kind == "label" then
+        local col = el.color or Theme.SubText
+        local ty = y + math.floor((h - 13) / 2)
+        if el.align == "center" then text(idp .. ".t", el.title, x + math.floor(w / 2), ty, 13, col, z + 2, true)
+        elseif el.align == "right" then text(idp .. ".t", el.title, x + w - 4 - textW(el.title, 13), ty, 13, col, z + 2)
+        else text(idp .. ".t", el.title, x + 2, ty, 13, col, z + 2) end
+        return
+    end
+
     local interactive = el.kind ~= "paragraph"
 
     if interactive then el.hover.goal = hovered and 1 or 0 end
@@ -1339,7 +1385,7 @@ local function renderWindow(dt)
     local viewBottom = cvy + cvh
     local tab = Tabs[State.ActiveTab]
     if tab then
-        local topPad, gap = 14, 8
+        local topPad, gap = 16, 10
         local totalH = topPad * 2
         for _, g in ipairs(tab.groups) do
             if g.title then totalH = totalH + 30 + gap end
@@ -1403,50 +1449,53 @@ local function renderWindow(dt)
 
     rect("win.tbmask", win.x, win.y, win.w, TITLE_H, Theme.WindowBg, OP.Window, 58, 8)
     innerHi("win.tbhi", win.x, win.y, win.w, 59, 0.05)
-    text("win.title", UI.Title or "Wabi", win.x + 18, win.y + 13, 18, Theme.Title, 62)
+    text("win.title", UI.Title or "bwin", win.x + 18, win.y + 15, 18, Theme.Title, 62)
     if UI.SubTitle and UI.SubTitle ~= "" then
-        local sx = win.x + 18 + textW(UI.Title or "Wabi", 18) + 12
+        local sx = win.x + 18 + textW(UI.Title or "bwin", 18) + 12
         local sw = textW(UI.SubTitle, 13) + 14
-        rect("win.subbg", sx - 7, win.y + 13, sw, 18, Theme.Accent, 0.16, 60, 9)
-        text("win.sub", UI.SubTitle, sx, win.y + 16, 13, Theme.Accent, 62)
+        rect("win.subbg", sx - 7, win.y + 15, sw, 18, Theme.Accent, 0.16, 60, 9)
+        text("win.sub", UI.SubTitle, sx, win.y + 18, 13, Theme.Accent, 62)
     end
     local mbW, mbH = 28, 22
-    local mbX, mbY = win.x + win.w - 16 - mbW, win.y + 11
+    local mbX, mbY = win.x + win.w - 16 - mbW, win.y + 12
     local mbHover = not block and inBounds(mbX, mbY, mbW, mbH)
     rect("win.minbg", mbX, mbY, mbW, mbH, Theme.Control, mbHover and 0.6 or 0, 60, 5)
     line("win.min", mbX + 9, mbY + math.floor(mbH / 2), mbX + mbW - 9, mbY + math.floor(mbH / 2), Theme.Text, 0.9, 61)
     if mbHover and Input.clicked then UI:Minimize() end
     local mxW = 28
-    local mxX, mxY = mbX - 6 - mxW, win.y + 11
+    local mxX, mxY = mbX - 6 - mxW, win.y + 12
     local mxHover = not block and inBounds(mxX, mxY, mxW, mbH)
     rect("win.maxbg", mxX, mxY, mxW, mbH, Theme.Control, mxHover and 0.6 or 0, 60, 5)
     outline("win.max", mxX + 9, mxY + 6, mxW - 18, mbH - 12, Theme.Text, 0.9, 61, 2)
     if mxHover and Input.clicked then UI:Maximize() end
     line("win.tline", win.x, win.y + TITLE_H, win.x + win.w, win.y + TITLE_H, Theme.TitleBarLine, 0.5, 59)
     line("win.rline", win.x + RAIL_W, win.y + TITLE_H, win.x + RAIL_W, win.y + win.h, Theme.RailLine, OP.Rail, 59)
-    local tabY0 = win.y + TITLE_H + 10
+    local tabY0 = win.y + TITLE_H + 12
     for i, t in ipairs(Tabs) do
-        local ty = tabY0 + (i - 1) * 36
+        local ty = tabY0 + (i - 1) * 38
         local tx = win.x + 8
         local tw = RAIL_W - 16
         local active = (i == State.ActiveTab)
-        local hovered = inBounds(tx, ty, tw, 30) and not block
+        local hovered = inBounds(tx, ty, tw, 32) and not block
+        t.hl = t.hl or newSpring(0, 16)
+        t.hl.goal = active and OP.TabActive or (hovered and OP.TabHover or 0)
+        springStep(t.hl, dt)
         if hovered and Input.clicked and not active then
             State.ActiveTab = i; State.Overlay = nil; State.Focused = nil; State.TabCurtain.v = 1
         end
-        rect("tab.hl" .. i, tx, ty, tw, 30, Theme.TabHighlight, active and OP.TabActive or (hovered and OP.TabHover or 0), 60, 6)
-        local textX = tx + 14
+        rect("tab.hl" .. i, tx, ty, tw, 32, Theme.TabHighlight, t.hl.v, 60, 7)
+        local textX = tx + 16
         if t.icon then
-            textX = tx + 36
-            if t.iconData then image("tab.ic" .. i, t.iconData, tx + 12, ty + 7, 16, 16, active and 1 or 0.5, 61) end
+            textX = tx + 38
+            if t.iconData then image("tab.ic" .. i, t.iconData, tx + 13, ty + 8, 16, 16, active and 1 or 0.5, 61) end
         end
-        text("tab.tx" .. i, t.name, textX, ty + 8, 13, active and Theme.TabTextActive or Theme.TabText, 61)
+        text("tab.tx" .. i, t.name, textX, ty + 9, 13, active and Theme.TabTextActive or Theme.TabText, 61)
     end
-    State.IndOff.goal = (State.ActiveTab - 1) * 36
+    State.IndOff.goal = (State.ActiveTab - 1) * 38
     if not State.IndInit then State.IndOff.v = State.IndOff.goal; State.IndInit = true end
-    springStep(State.IndOff, dt)
-    rect("tab.indg", win.x + 7, tabY0 + State.IndOff.v + 4, 6, 22, Theme.Accent, 0.20, 60, 3)
-    rect("tab.ind", win.x + 8, tabY0 + State.IndOff.v + 7, 3, 16, Theme.Accent, 1, 61, 2)
+    spring2Step(State.IndOff, dt)
+    rect("tab.indg", win.x + 7, tabY0 + State.IndOff.v + 5, 6, 22, Theme.Accent, 0.20, 60, 3)
+    rect("tab.ind", win.x + 8, tabY0 + State.IndOff.v + 8, 3, 16, Theme.Accent, 1, 61, 2)
 end
 
 local function renderNotifs(dt)
@@ -1530,7 +1579,7 @@ end
 
 local function renderBubble(dt)
     local bp = State.BubblePos
-    local label = UI.Title or "Wabi"
+    local label = UI.Title or "bwin"
     if UI.SubTitle and UI.SubTitle ~= "" then label = label .. "  " .. UI.SubTitle end
     local pw = math.floor(46 + textW(label, 13))
     local ph = 32
@@ -1575,6 +1624,9 @@ local function step()
     pollTextInput(ck)
     if not busy and ck(State.MenuKey) then UI:Minimize() end
 
+    springStep(State.Appear, dt)
+    GAlpha = clamp(State.Appear.v, 0, 1)
+
     if #Notifs > 0 or State.Dialog then State.Vw, State.Vh = getViewport() end
     if State.Minimized then renderBubble(dt) else renderWindow(dt) end
     renderDialog(dt)
@@ -1595,17 +1647,18 @@ UI.Unloaded = false
 UI.Loaded = false
 
 function UI:Start()
-    local prev = _G.__WabiSabi
+    local prev = _G.__bwin
     if prev and prev ~= UI and prev._RemoveAll then pcall(function() prev:_RemoveAll() end) end
-    _G.__WabiSabi = UI
-    if State.Running then _G.__WabiSabiToken = State.Token; return end
+    _G.__bwin = UI
+    if State.Running then _G.__bwinToken = State.Token; return end
     local token = {}
-    _G.__WabiSabiToken = token; State.Token = token; State.Running = true
+    _G.__bwinToken = token; State.Token = token; State.Running = true
     UI.Loaded = true; UI.Unloaded = false
+    State.Appear.v = 0; State.Appear.goal = 1  -- fade the whole menu in on launch
     task.spawn(function()
-        while _G.__WabiSabiToken == token do
+        while _G.__bwinToken == token do
             local ok, err = pcall(step)
-            if not ok then warn("[WabiSabi] " .. tostring(err)) end
+            if not ok then warn("[bwin] " .. tostring(err)) end
             State.InStep = false
             Input.prevDown = Input.down
             task.wait()
@@ -1617,7 +1670,7 @@ function UI:Start()
 end
 
 function UI:Stop()
-    if _G.__WabiSabiToken == State.Token then _G.__WabiSabiToken = nil end
+    if _G.__bwinToken == State.Token then _G.__bwinToken = nil end
     State.Running = false
     UI:_RemoveAll()
 end
@@ -1653,7 +1706,7 @@ function UI:Minimize()
         State.Drag = false
         if not State.MinNotified then
             State.MinNotified = true
-            UI:Notify({ Title = "Wabi Sabi", Content = "Press " .. (State.MenuKeyName or "End") .. " or click the bubble to restore.", Duration = 6 })
+            UI:Notify({ Title = "bwin", Content = "Press " .. (State.MenuKeyName or "End") .. " or click the bubble to restore.", Duration = 6 })
         end
     end
 end
@@ -1722,15 +1775,15 @@ function UI:SaveConfig(name)
         local s = serializeEl(el)
         if s then data[id] = s end
     end
-    pcall(function() makefolder("WabiSabi") end)
+    pcall(function() makefolder("bwin") end)
     local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
-    if ok and json then pcall(function() writefile("WabiSabi/" .. name .. ".json", json) end) end
+    if ok and json then pcall(function() writefile("bwin/" .. name .. ".json", json) end) end
     return ok == true
 end
 
 function UI:LoadConfig(name)
     name = name or UI.ConfigName or "default"
-    local ok, content = pcall(function() return readfile("WabiSabi/" .. name .. ".json") end)
+    local ok, content = pcall(function() return readfile("bwin/" .. name .. ".json") end)
     if not ok or not content then return false end
     local dok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(content) end)
     if not dok or type(data) ~= "table" then return false end
@@ -1756,7 +1809,7 @@ end
 function UI:GetConfigs()
     local out = {}
     pcall(function()
-        for _, path in ipairs(listfiles("WabiSabi")) do
+        for _, path in ipairs(listfiles("bwin")) do
             local name = tostring(path):match("([^/\\]+)%.json$")
             if name and name ~= "interface" then out[#out + 1] = name end
         end
@@ -1766,12 +1819,12 @@ function UI:GetConfigs()
 end
 
 function UI:SetAutoload(name)
-    pcall(function() makefolder("WabiSabi") end)
-    pcall(function() writefile("WabiSabi/autoload.txt", tostring(name)) end)
+    pcall(function() makefolder("bwin") end)
+    pcall(function() writefile("bwin/autoload.txt", tostring(name)) end)
 end
 
 function UI:GetAutoload()
-    local ok, content = pcall(function() return readfile("WabiSabi/autoload.txt") end)
+    local ok, content = pcall(function() return readfile("bwin/autoload.txt") end)
     if ok and content and content ~= "" then return content end
     return nil
 end
@@ -1784,13 +1837,13 @@ end
 
 function UI:SaveInterfaceSettings()
     local data = { Theme = UI.ThemeName, Translucent = OP.Window < 1, MenuKey = State.MenuKey, MenuKeyName = State.MenuKeyName }
-    pcall(function() makefolder("WabiSabi") end)
+    pcall(function() makefolder("bwin") end)
     local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
-    if ok and json then pcall(function() writefile("WabiSabi/interface.json", json) end) end
+    if ok and json then pcall(function() writefile("bwin/interface.json", json) end) end
 end
 
 function UI:LoadInterfaceSettings()
-    local ok, content = pcall(function() return readfile("WabiSabi/interface.json") end)
+    local ok, content = pcall(function() return readfile("bwin/interface.json") end)
     if not ok or not content then return nil end
     local dok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(content) end)
     if dok and type(data) == "table" then return data end
@@ -1808,7 +1861,7 @@ function UI:CreateWindow(cfg)
         State.Win.w = math.max(State.MinW, math.floor(State.Win.w * scale))
         State.Win.h = math.max(State.MinH, math.floor(State.Win.h * scale))
     end
-    UI.Title = cfg.Title or "Wabi"
+    UI.Title = cfg.Title or "bwin"
     UI.SubTitle = cfg.SubTitle or ""
     UI.ConfigName = cfg.ConfigName
     if cfg.Translucent ~= nil then UI:SetTranslucent(cfg.Translucent) end
@@ -1840,6 +1893,8 @@ function UI:CreateWindow(cfg)
         end
         local function bindAdders(I, getGroup)
             function I:AddParagraph(c) return addTo(getGroup(), c, mkParagraph(c)) end
+            function I:AddDivider(c) return addTo(getGroup(), c or {}, mkDivider(c or {})) end
+            function I:AddLabel(c) return addTo(getGroup(), c or {}, mkLabel(c or {})) end
             function I:AddButton(c) return addTo(getGroup(), c, mkButton(c)) end
             function I:AddToggle(c) return addTo(getGroup(), c, mkToggle(c)) end
             function I:AddSlider(c) return addTo(getGroup(), c, mkSlider(c)) end
@@ -1930,4 +1985,4 @@ function UI:CreateWindow(cfg)
     return Window
 end
 
-return WabiSabi
+return bwin
